@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<seiscomp>
+	<plugin name="maptiles_community">
+		<extends>global</extends>
+		<description>
+		Community XYZ tile store plugin for SeisComP. Fetches map tiles from
+		any XYZ/slippy-map tile server (OpenStreetMap, OpenTopoMap, ESRI World
+		Imagery, CartoDB, custom servers, etc.) and caches them on disk.
+
+		Activate by adding 'maptiles_community' to 'plugins' and setting:
+		  map.type     = xyz
+		  map.location = https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+
+		URL template tokens:
+		  {z}  zoom level
+		  {x}  tile column (longitude)
+		  {y}  tile row    (latitude, 0 = north)
+		  {s}  subdomain, rotated through map.xyz.subdomains
+
+		Example URL templates:
+		  OpenStreetMap standard:
+		    https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+		  OpenTopoMap (terrain + contours):
+		    https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png
+		  ESRI World Imagery (satellite) — note reversed y/x order:
+		    https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
+		  CartoDB Positron (clean light basemap):
+		    https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png
+		  Custom tile server (with API key in URL):
+		    https://tiles.example.com/{z}/{x}/{y}.png?apikey=YOUR_KEY
+		</description>
+		<configuration>
+			<group name="map">
+				<group name="xyz">
+					<description>
+					Configuration for the XYZ tile store (map.type = xyz).
+					</description>
+					<parameter name="subdomains" type="string" default="a,b,c">
+						<description>
+						Comma-separated list of subdomain characters substituted
+						for {s} in the URL template. Requests rotate across all
+						listed subdomains for basic load-balancing.
+						Default: a,b,c (standard for OSM-style servers).
+						Set to a single value or leave empty if the server has
+						no subdomain variants.
+						</description>
+					</parameter>
+					<parameter name="maxLevel" type="uint" default="18" range="0:19">
+						<description>
+						Maximum zoom level to request from the tile server.
+						Most OSM-based servers provide tiles up to level 18 or 19.
+						Requesting beyond the server's maximum returns 404 errors.
+						</description>
+					</parameter>
+					<parameter name="tileSize" type="uint" default="256" unit="px">
+						<description>
+						Edge length of square tiles in pixels. Standard tiles are
+						256 px. Some servers provide 512 px (HiDPI/retina) tiles,
+						often via an @2x suffix in the URL.
+						</description>
+					</parameter>
+					<parameter name="cacheDir" type="directory">
+						<description>
+						Directory for caching downloaded tiles. Tiles are stored
+						as cacheDir/{z}/{x}/{y} and reused until cacheDuration
+						seconds have elapsed. Raw bytes are stored (no re-encoding),
+						so the original format and quality are preserved.
+						Leave empty to disable disk caching (tiles are re-fetched
+						every session).
+						Recommended: ~/.seiscomp/cache/maptiles
+						</description>
+					</parameter>
+					<parameter name="cacheDuration" type="int" default="86400" unit="s">
+						<description>
+						How long (in seconds) a cached tile is considered fresh
+						before the server is queried again.
+						  86400  = 24 hours (default — good for street/topo maps)
+						  604800 = 7 days   (good for satellite imagery)
+						  -1     = never expire (tiles are kept until manually deleted)
+						   0     = disable caching (always fetch from server)
+						</description>
+					</parameter>
+					<parameter name="userAgent" type="string"
+					           default="SeisComP-maptiles-community/1.0">
+						<description>
+						HTTP User-Agent header sent with every tile request.
+						Tile server operators use this to identify and contact
+						heavy users. Please set this to something identifying
+						your institution when deploying publicly, e.g.:
+						  SeisComP/MyInstitute-1.0 (contact@example.org)
+						This is required by OSM's tile usage policy.
+						</description>
+					</parameter>
+				</group>
+			</group>
+		</configuration>
+	</plugin>
+</seiscomp>
