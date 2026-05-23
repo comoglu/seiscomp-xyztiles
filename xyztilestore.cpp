@@ -9,12 +9,10 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
-#include <QFileSystemWatcher>
 #include <QImage>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QTextStream>
 #include <QUrl>
 
 using namespace Seiscomp::Gui;
@@ -27,74 +25,7 @@ XYZTileStore::XYZTileStore()
 : _userAgent("SeisComP-maptiles-community/1.0") {}
 
 XYZTileStore::~XYZTileStore() {
-	abortInflight();
-}
-
-
-void XYZTileStore::loadSources(Seiscomp::Client::Application *app) {
-	if ( !app ) return;
-
-	// map.xyz.sources = osm, topo, satellite  (optional — enables hot-swap)
-	std::string sourcesStr;
-	try { sourcesStr = app->configGetString("map.xyz.sources"); } catch (...) { return; }
-
-	const QStringList names = QString::fromStdString(sourcesStr)
-	                              .split(',', Qt::SkipEmptyParts);
-	for ( const QString &raw : names ) {
-		const QString name = raw.trimmed();
-		if ( name.isEmpty() ) continue;
-
-		std::string url;
-		try {
-			url = app->configGetString(
-			          ("map.xyz." + name.toStdString() + ".url").c_str());
-		} catch (...) {
-			SEISCOMP_WARNING("xyz: source '%s' has no url configured — skipped",
-			                 qUtf8Printable(name));
-			continue;
-		}
-
-		XYZSource src;
-		src.name        = name;
-		src.urlTemplate = QString::fromStdString(url);
-
-		try {
-			QString s = QString::fromStdString(app->configGetString(
-			    ("map.xyz." + name.toStdString() + ".subdomains").c_str()));
-			for ( auto &sub : s.split(',', Qt::SkipEmptyParts) )
-				src.subdomains << sub.trimmed();
-		} catch (...) {}
-
-		if ( src.subdomains.isEmpty() && src.urlTemplate.contains("{s}") )
-			src.subdomains << "a" << "b" << "c";
-
-		_sources.insert(name, src);
-		SEISCOMP_INFO("xyz: registered source '%s' → %s",
-		              qUtf8Printable(name), qUtf8Printable(src.urlTemplate));
-	}
-}
-
-
-bool XYZTileStore::switchSource(const QString &name) {
-	auto it = _sources.find(name);
-	if ( it == _sources.end() ) {
-		SEISCOMP_WARNING("xyz: unknown source '%s' — ignoring switch request",
-		                 qUtf8Printable(name));
-		return false;
-	}
-
-	if ( name == _currentSourceName ) return false;
-
-	abortInflight();
-
-	_urlTemplate        = it->urlTemplate;
-	_subdomains         = it->subdomains;
-	_subdomainIndex     = 0;
-	_currentSourceName  = name;
-
-	SEISCOMP_INFO("xyz: switched to source '%s' → %s",
-	              qUtf8Printable(name), qUtf8Printable(_urlTemplate));
-	return true;
+	refresh();
 }
 
 
@@ -125,15 +56,6 @@ bool XYZTileStore::open(MapsDesc &desc) {
 			int sz = app->configGetInt("map.xyz.tileSize");
 			_tilesize = QSize(sz, sz);
 		} catch (...) {}
-		try {
-			_switchFile = QString::fromStdString(
-			    app->configGetString("map.xyz.switchFile"));
-		} catch (...) {
-			// Default: ~/.seiscomp/xyz_source
-			_switchFile = QDir::homePath() + "/.seiscomp/xyz_source";
-		}
-
-		loadSources(app);
 	}
 
 	if ( _tilesize.isEmpty() )
@@ -151,53 +73,11 @@ bool XYZTileStore::open(MapsDesc &desc) {
 	if ( !_cacheDir.isEmpty() )
 		QDir().mkpath(_cacheDir);
 
-	// Set up file watcher for hot-swap if sources are configured
-	if ( !_sources.isEmpty() ) {
-		// Ensure the switch file exists so watcher can attach
-		if ( !QFile::exists(_switchFile) ) {
-			QDir().mkpath(QFileInfo(_switchFile).absolutePath());
-			QFile f(_switchFile);
-			if ( f.open(QIODevice::WriteOnly) ) {
-				QTextStream(&f) << _currentSourceName;
-			}
-		}
-
-		_watcher = new QFileSystemWatcher(this);
-		_watcher->addPath(_switchFile);
-		connect(_watcher, &QFileSystemWatcher::fileChanged,
-		        this, &XYZTileStore::onSourceFileChanged);
-
-		SEISCOMP_INFO("xyz: hot-swap enabled — write source name to %s",
-		              qUtf8Printable(_switchFile));
-		SEISCOMP_INFO("xyz: available sources: %s",
-		              qUtf8Printable(QStringList(_sources.keys()).join(", ")));
-	}
-
 	SEISCOMP_INFO("xyz: tile store opened — url=%s  maxLevel=%d  cache=%s  ttl=%ds",
 	              qUtf8Printable(_urlTemplate), _maxLevel,
 	              _cacheDir.isEmpty() ? "disabled" : qUtf8Printable(_cacheDir),
 	              _cacheDuration);
 	return true;
-}
-
-
-void XYZTileStore::onSourceFileChanged(const QString &path) {
-	// Some editors replace the file rather than modify in place — re-watch
-	if ( !_watcher->files().contains(path) )
-		_watcher->addPath(path);
-
-	QFile f(path);
-	if ( !f.open(QIODevice::ReadOnly) ) return;
-
-	const QString name = QTextStream(&f).readLine().trimmed();
-	if ( name.isEmpty() ) return;
-
-	if ( switchSource(name) ) {
-		// Abort in-flight already done inside switchSource().
-		// The map widget will re-request visible tiles on next render.
-		SEISCOMP_INFO("xyz: hot-swap complete → source is now '%s'",
-		              qUtf8Printable(name));
-	}
 }
 
 
@@ -283,19 +163,11 @@ void XYZTileStore::onRequestFinished(QNetworkReply *reply) {
 		QString path = cachePath(tile);
 		QDir().mkpath(QFileInfo(path).absolutePath());
 		QFile f(path);
-		if ( f.open(QIODevice::WriteOnly) )
+		if ( f.open(QIODevice::WriteOnly ) )
 			f.write(data);
 	}
 
 	loadingComplete(img, tile);
-}
-
-
-void XYZTileStore::abortInflight() {
-	for ( auto *reply : _replyMap.keys() )
-		reply->abort();
-	_replyMap.clear();
-	_inflight.clear();
 }
 
 
@@ -332,7 +204,10 @@ bool XYZTileStore::isCacheFresh(const QString &path) const {
 
 
 void XYZTileStore::refresh() {
-	abortInflight();
+	for ( auto *reply : _replyMap.keys() )
+		reply->abort();
+	_replyMap.clear();
+	_inflight.clear();
 }
 
 
