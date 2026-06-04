@@ -22,8 +22,8 @@ No additional runtime dependencies — Qt Network is already required by SeisCom
 ## Build and install
 
 ```bash
-git clone https://github.com/comoglu/xyztiles.git
-cd xyztiles
+git clone https://github.com/comoglu/seiscomp-xyztiles.git
+cd seiscomp-xyztiles
 cmake -S . -B build
 cmake --build build -j$(nproc)
 cmake --install build        # installs into /opt/seiscomp by default
