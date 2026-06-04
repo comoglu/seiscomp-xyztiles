@@ -12,7 +12,9 @@
  ***************************************************************************/
 
 
-#pragma once
+#ifndef SEISCOMP_GUI_MAP_XYZTILESTORE_H__
+#define SEISCOMP_GUI_MAP_XYZTILESTORE_H__
+
 
 #include <seiscomp/gui/map/imagetree.h>
 
@@ -65,3 +67,6 @@ private:
 	QHash<QNetworkReply *, TileId>  _replyMap;
 	QSet<TileId>                    _inflight;
 };
+
+
+#endif
