@@ -1,36 +1,29 @@
-# seiscomp-maptiles-community
+# xyztiles — SeisComP XYZ tile store plugin
 
-A community [SeisComP](https://www.seiscomp.de/) plugin that adds support for
-XYZ/slippy-map tile servers (OpenStreetMap, OpenTopoMap, ESRI World Imagery,
-CartoDB, and any other standard XYZ tile source) to SeisComP GUI applications
-such as **scolv** and **scmv**.
+A [SeisComP](https://www.seiscomp.de/) plugin that adds support for any
+XYZ/slippy-map tile server to SeisComP GUI applications (scolv, scmv, etc.).
 
----
-
-## Features
-
-- Any XYZ/slippy-map tile URL template (`{z}/{x}/{y}`, `{s}` subdomain rotation)
-- Disk tile cache with configurable TTL
-- HTTP/2 and redirect support
-- Fully configurable via SeisComP's standard `scconfig` interface
-- No extra runtime dependencies beyond Qt Network (already required by SeisComP GUI)
+Registers as tile store type `xyz`. Works with OpenStreetMap, OpenTopoMap,
+ESRI World Imagery, CartoDB, and any other server that serves standard
+`{z}/{x}/{y}` tiles.
 
 ---
 
 ## Requirements
 
-- SeisComP ≥ 5.x (tested against nightly builds)
-- Qt 5 (Core, Network, Gui)
+- SeisComP ≥ 5.x (Qt5 or Qt6 build)
 - CMake ≥ 3.14
 - C++17 compiler
 
+No additional runtime dependencies — Qt Network is already required by SeisComP GUI.
+
 ---
 
-## Build
+## Build and install
 
 ```bash
-git clone https://github.com/comoglu/seiscomp-maptiles-community.git
-cd seiscomp-maptiles-community
+git clone https://github.com/comoglu/xyztiles.git
+cd xyztiles
 cmake -S . -B build
 cmake --build build -j$(nproc)
 cmake --install build        # installs into /opt/seiscomp by default
@@ -46,10 +39,10 @@ cmake -S . -B build -DSEISCOMP_ROOT=/path/to/seiscomp
 
 ## Configuration
 
-Add `maptiles_community` to the plugin list in `global.cfg` (or via `scconfig`):
+Add `xyztiles` to the plugin list in `global.cfg` (or via `scconfig`):
 
 ```ini
-plugins = maptiles_community
+plugins = xyztiles
 
 map.type     = xyz
 map.location = https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
@@ -61,23 +54,28 @@ map.location = https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 |--------|-------------|
 | OpenStreetMap | `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png` |
 | OpenTopoMap | `https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png` |
+| ESRI NatGeo | `https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}` |
 | ESRI World Imagery | `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}` |
 | CartoDB Positron | `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png` |
 
-### Optional parameters
+> **Note:** ESRI tile URLs use `{z}/{y}/{x}` (row before column) — the opposite
+> of the OSM convention. Both orderings work; just match the URL template to the
+> server's expectation.
+
+### Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `map.xyz.subdomains` | `a,b,c` | Comma-separated subdomain list for `{s}` |
+| `map.xyz.subdomains` | `a,b,c` | Comma-separated subdomain list for `{s}` rotation |
 | `map.xyz.maxLevel` | `18` | Maximum zoom level |
 | `map.xyz.tileSize` | `256` | Tile edge length in pixels |
-| `map.xyz.cacheDir` | *(empty)* | Directory for disk tile cache |
+| `map.xyz.cacheDir` | *(empty)* | Directory for on-disk tile cache |
 | `map.xyz.cacheDuration` | `86400` | Cache TTL in seconds (`-1` = forever, `0` = disabled) |
-| `map.xyz.userAgent` | `SeisComP-maptiles-community/1.0` | HTTP User-Agent header |
+| `map.xyz.userAgent` | `SeisComP-xyztiles/1.0` | HTTP User-Agent header |
 
-> **Note:** If using OpenStreetMap tiles, please set `map.xyz.userAgent` to
-> something identifying your institution — this is required by OSM's
-> [tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
+> **OSM policy:** If using OpenStreetMap tiles, set `map.xyz.userAgent` to
+> something identifying your institution —
+> [required by OSM's tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
 ---
 

@@ -1,4 +1,18 @@
-#define SEISCOMP_COMPONENT MapTilesCommunity
+/***************************************************************************
+ * Copyright (C) comoglu@gmail.com                                         *
+ * All rights reserved.                                                    *
+ *                                                                         *
+ * GNU Affero General Public License Usage                                 *
+ * This file may be used under the terms of the GNU Affero                 *
+ * Public License version 3.0 as published by the Free Software Foundation *
+ * and appearing in the file LICENSE included in the packaging of this     *
+ * file. Please review the following information to ensure the GNU Affero  *
+ * Public License version 3.0 requirements will be met:                    *
+ * https://www.gnu.org/licenses/agpl-3.0.html.                             *
+ ***************************************************************************/
+
+
+#define SEISCOMP_COMPONENT XYZTiles
 
 #include "xyztilestore.h"
 
@@ -21,14 +35,20 @@ using namespace Seiscomp::Gui::Map;
 REGISTER_TILESTORE_INTERFACE(XYZTileStore, "xyz");
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 XYZTileStore::XYZTileStore()
-: _userAgent("SeisComP-maptiles-community/1.0") {}
+: _userAgent("SeisComP-xyztiles/1.0") {}
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 XYZTileStore::~XYZTileStore() {
 	refresh();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool XYZTileStore::open(MapsDesc &desc) {
 	_urlTemplate = desc.location.trimmed();
 	if ( _urlTemplate.isEmpty() ) {
@@ -79,8 +99,10 @@ bool XYZTileStore::open(MapsDesc &desc) {
 	              _cacheDuration);
 	return true;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 TileStore::LoadResult XYZTileStore::load(QImage &img, const TileIndex &tile) {
 	if ( _inflight.contains(tile.id) )
 		return Deferred;
@@ -97,8 +119,10 @@ TileStore::LoadResult XYZTileStore::load(QImage &img, const TileIndex &tile) {
 	startRequest(tile);
 	return Deferred;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void XYZTileStore::startRequest(const TileIndex &tile) {
 	_inflight.insert(tile.id);
 
@@ -112,8 +136,10 @@ void XYZTileStore::startRequest(const TileIndex &tile) {
 	QNetworkReply *reply = _nam->get(req);
 	_replyMap.insert(reply, tile.id);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void XYZTileStore::onRequestFinished(QNetworkReply *reply) {
 	reply->deleteLater();
 
@@ -163,14 +189,16 @@ void XYZTileStore::onRequestFinished(QNetworkReply *reply) {
 		QString path = cachePath(tile);
 		QDir().mkpath(QFileInfo(path).absolutePath());
 		QFile f(path);
-		if ( f.open(QIODevice::WriteOnly ) )
+		if ( f.open(QIODevice::WriteOnly) )
 			f.write(data);
 	}
 
 	loadingComplete(img, tile);
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QString XYZTileStore::buildURL(const TileIndex &tile) {
 	QString url = _urlTemplate;
 	url.replace("{z}", QString::number(tile.level()));
@@ -184,8 +212,10 @@ QString XYZTileStore::buildURL(const TileIndex &tile) {
 
 	return url;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QString XYZTileStore::cachePath(const TileIndex &tile) const {
 	return QString("%1/%2/%3/%4")
 	    .arg(_cacheDir)
@@ -193,34 +223,51 @@ QString XYZTileStore::cachePath(const TileIndex &tile) const {
 	    .arg(tile.column())
 	    .arg(tile.row());
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool XYZTileStore::isCacheFresh(const QString &path) const {
 	if ( _cacheDuration < 0 ) return true;
 	if ( _cacheDuration == 0 ) return false;
 	return QFileInfo(path).lastModified().secsTo(QDateTime::currentDateTime())
 	       < _cacheDuration;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 void XYZTileStore::refresh() {
 	for ( auto *reply : _replyMap.keys() )
 		reply->abort();
 	_replyMap.clear();
 	_inflight.clear();
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
-int     XYZTileStore::maxLevel()           const { return _maxLevel; }
-bool    XYZTileStore::hasPendingRequests() const { return !_inflight.isEmpty(); }
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+int XYZTileStore::maxLevel() const { return _maxLevel; }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+bool XYZTileStore::hasPendingRequests() const { return !_inflight.isEmpty(); }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 QString XYZTileStore::getID(const TileIndex &tile) const {
 	return QString("%1/%2/%3")
 	    .arg(tile.level()).arg(tile.column()).arg(tile.row());
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 bool XYZTileStore::validate(int level, int column, int row) const {
 	if ( level < 0 || level > _maxLevel ) return false;
 	const int n = 1 << level;
 	return column >= 0 && column < n && row >= 0 && row < n;
 }
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<

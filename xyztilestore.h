@@ -1,3 +1,17 @@
+/***************************************************************************
+ * Copyright (C) comoglu@gmail.com                                         *
+ * All rights reserved.                                                    *
+ *                                                                         *
+ * GNU Affero General Public License Usage                                 *
+ * This file may be used under the terms of the GNU Affero                 *
+ * Public License version 3.0 as published by the Free Software Foundation *
+ * and appearing in the file LICENSE included in the packaging of this     *
+ * file. Please review the following information to ensure the GNU Affero  *
+ * Public License version 3.0 requirements will be met:                    *
+ * https://www.gnu.org/licenses/agpl-3.0.html.                             *
+ ***************************************************************************/
+
+
 #pragma once
 
 #include <seiscomp/gui/map/imagetree.h>
@@ -39,15 +53,15 @@ private:
 	bool    isCacheFresh(const QString &path) const;
 	void    startRequest(const Seiscomp::Gui::Map::TileIndex &tile);
 
-	QNetworkAccessManager           *_nam{nullptr};
-	QString                          _urlTemplate;
-	QStringList                      _subdomains;
-	int                              _subdomainIndex{0};
-	int                              _maxLevel{18};
-	QString                          _cacheDir;
-	int                              _cacheDuration{86400};
-	QString                          _userAgent;
+	QNetworkAccessManager          *_nam{nullptr};
+	QString                         _urlTemplate;
+	QStringList                     _subdomains;
+	int                             _subdomainIndex{0};
+	int                             _maxLevel{18};
+	QString                         _cacheDir;
+	int                             _cacheDuration{86400};
+	QString                         _userAgent;
 
-	QHash<QNetworkReply *, TileId>   _replyMap;
-	QSet<TileId>                     _inflight;
+	QHash<QNetworkReply *, TileId>  _replyMap;
+	QSet<TileId>                    _inflight;
 };

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <seiscomp>
-	<plugin name="maptiles_community">
+	<plugin name="xyztiles">
 		<extends>global</extends>
 		<description>
-		Community XYZ tile store plugin for SeisComP. Fetches map tiles from
-		any XYZ/slippy-map tile server (OpenStreetMap, OpenTopoMap, ESRI World
+		XYZ/slippy-map tile store plugin for SeisComP. Fetches map tiles from
+		any standard XYZ tile server (OpenStreetMap, OpenTopoMap, ESRI World
 		Imagery, CartoDB, custom servers, etc.) and caches them on disk.
 
-		Activate by adding 'maptiles_community' to 'plugins' and setting:
+		Activate by adding 'xyztiles' to 'plugins' and setting:
 		  map.type     = xyz
 		  map.location = https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 
@@ -67,7 +67,7 @@
 						so the original format and quality are preserved.
 						Leave empty to disable disk caching (tiles are re-fetched
 						every session).
-						Recommended: ~/.seiscomp/cache/maptiles
+						Recommended: ~/.seiscomp/cache/xyztiles
 						</description>
 					</parameter>
 					<parameter name="cacheDuration" type="int" default="86400" unit="s">
@@ -81,7 +81,7 @@
 						</description>
 					</parameter>
 					<parameter name="userAgent" type="string"
-					           default="SeisComP-maptiles-community/1.0">
+					           default="SeisComP-xyztiles/1.0">
 						<description>
 						HTTP User-Agent header sent with every tile request.
 						Tile server operators use this to identify and contact

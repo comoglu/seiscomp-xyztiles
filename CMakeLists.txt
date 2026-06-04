@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(maptiles_community CXX)
+project(xyztiles CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,7 +22,6 @@ find_path(SC_INCLUDE_DIR seiscomp/core/baseobject.h
     NO_DEFAULT_PATH
     REQUIRED)
 
-# The Qt-integrated GUI library is called libseiscomp_qt in installed builds
 find_library(SC_QT_LIB seiscomp_qt
     PATHS "${SEISCOMP_ROOT}/lib"
     NO_DEFAULT_PATH
@@ -39,48 +38,51 @@ find_library(SC_CORE_LIB seiscomp_core
     REQUIRED)
 
 # ---------------------------------------------------------------------------
-# Qt5
+# Qt5 / Qt6
 # ---------------------------------------------------------------------------
-find_package(Qt5 COMPONENTS Core Network Gui REQUIRED)
+find_package(Qt5 COMPONENTS Core Network Gui QUIET)
+if(NOT Qt5_FOUND)
+    find_package(Qt6 COMPONENTS Core Network Gui REQUIRED)
+    set(QT_LIBS Qt6::Core Qt6::Network Qt6::Gui)
+else()
+    set(QT_LIBS Qt5::Core Qt5::Network Qt5::Gui)
+endif()
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # ---------------------------------------------------------------------------
-# Plugin target (MODULE = not linked into other targets, loaded at runtime)
+# Plugin target
 # ---------------------------------------------------------------------------
-add_library(maptiles_community MODULE
+add_library(xyztiles MODULE
     plugin.cpp
     xyztilestore.cpp
 )
 
-target_include_directories(maptiles_community PRIVATE
+target_include_directories(xyztiles PRIVATE
     ${SC_INCLUDE_DIR}
 )
 
-target_link_libraries(maptiles_community PRIVATE
+target_link_libraries(xyztiles PRIVATE
     ${SC_QT_LIB}
     ${SC_CLIENT_LIB}
     ${SC_CORE_LIB}
-    Qt5::Core
-    Qt5::Network
-    Qt5::Gui
+    ${QT_LIBS}
 )
 
-# Plugins must not have a "lib" prefix
-set_target_properties(maptiles_community PROPERTIES PREFIX "")
+set_target_properties(xyztiles PROPERTIES PREFIX "")
 
 # ---------------------------------------------------------------------------
 # Install
 # ---------------------------------------------------------------------------
-install(TARGETS maptiles_community
+install(TARGETS xyztiles
     LIBRARY DESTINATION "${SEISCOMP_ROOT}/share/plugins"
 )
 
 install(FILES
-    seiscomp/etc/descriptions/global_maptiles_community.xml
+    seiscomp/etc/descriptions/global_xyztiles.xml
     DESTINATION "${SEISCOMP_ROOT}/etc/descriptions"
 )
 
 message(STATUS "Install prefix: ${SEISCOMP_ROOT}")
-message(STATUS "  plugin  → ${SEISCOMP_ROOT}/share/plugins/maptiles_community.so")
-message(STATUS "  config  → ${SEISCOMP_ROOT}/etc/descriptions/global_maptiles_community.xml")
+message(STATUS "  plugin  → ${SEISCOMP_ROOT}/share/plugins/xyztiles.so")
+message(STATUS "  config  → ${SEISCOMP_ROOT}/etc/descriptions/global_xyztiles.xml")
