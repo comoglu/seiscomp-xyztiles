@@ -35,6 +35,23 @@ To target a different SeisComP installation:
 cmake -S . -B build -DSEISCOMP_ROOT=/path/to/seiscomp
 ```
 
+The same source builds against both **SeisComP 7** (SC_API 17) and **SeisComP 8**
+(SC_API 18); the Mercator-projection call is version-guarded. Plugins are
+ABI-specific per SeisComP major version, so use the binary that matches yours.
+
+### Prebuilt binaries
+
+The [Releases](https://github.com/comoglu/seiscomp-xyztiles/releases) page has
+prebuilt `.so` files for Ubuntu 24.04 (x86_64, Qt5):
+
+- `xyztiles-<ver>-seiscomp7-...` — **all SeisComP 7.x** (7.0 through the latest
+  7.3+; built against API 17.0 so it loads on every 7.x by SeisComP's plugin
+  API rule).
+- `xyztiles-<ver>-seiscomp8.0-...` — **SeisComP 8.x** (API 18).
+
+Install by copying the matching file into `<SEISCOMP_ROOT>/share/plugins/` and
+the description XML into `<SEISCOMP_ROOT>/etc/descriptions/`.
+
 ---
 
 ## Configuration

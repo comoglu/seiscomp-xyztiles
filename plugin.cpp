@@ -18,5 +18,5 @@
 ADD_SC_PLUGIN(
 	"XYZ/slippy-map tile store — supports OSM, OTM, ESRI, CartoDB and any XYZ tile server",
 	"comoglu@gmail.com",
-	1, 0, 0
+	1, 1, 0
 )

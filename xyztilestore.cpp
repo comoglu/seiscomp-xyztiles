@@ -17,6 +17,7 @@
 #include "xyztilestore.h"
 
 #include <seiscomp/client/application.h>
+#include <seiscomp/core/version.h>
 #include <seiscomp/logging/log.h>
 
 #include <QDateTime>
@@ -159,7 +160,12 @@ bool XYZTileStore::open(MapsDesc &desc) {
 	if ( _subdomains.isEmpty() && needSubdomains )
 		_subdomains << "a" << "b" << "c";
 
+	// Web-Mercator tile set. v7 expresses this through the MapsDesc flag;
+	// v8 (SC_API >= 18) additionally exposes a projection enum on the store.
+	desc.isMercatorProjected = true;
+#if SC_API_VERSION >= SC_API_VERSION_CHECK(18, 0, 0)
 	_projection = Mercator;
+#endif
 
 	_nam = new QNetworkAccessManager(this);
 	connect(_nam, &QNetworkAccessManager::finished,
