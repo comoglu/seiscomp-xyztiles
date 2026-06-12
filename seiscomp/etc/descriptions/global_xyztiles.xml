@@ -45,18 +45,64 @@
 						no subdomain variants.
 						</description>
 					</parameter>
-					<parameter name="maxLevel" type="uint" default="18" range="0:19">
+					<parameter name="sources" type="list:string">
 						<description>
-						Maximum zoom level to request from the tile server.
-						Most OSM-based servers provide tiles up to level 18 or 19.
-						Requesting beyond the server's maximum returns 404 errors.
+						Optional list of tile sources, each serving a contiguous
+						zoom-level band, for showing different basemaps at
+						different zoom levels (e.g. a clean overview map when
+						zoomed out, satellite imagery when zoomed in).
+
+						Each entry has the form "minLevel:maxLevel:urlTemplate".
+						Only the first two colons are separators, so the "https://"
+						in the URL is preserved. Example:
+						  map.xyz.sources = "0:9:https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",\
+						                    "10:19:https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+
+						When set, this overrides map.location. When empty, the
+						single map.location is used with minLevel/maxLevel below.
 						</description>
 					</parameter>
-					<parameter name="tileSize" type="uint" default="256" unit="px">
+					<parameter name="minLevel" type="uint" default="0" range="0:29">
 						<description>
-						Edge length of square tiles in pixels. Standard tiles are
-						256 px. Some servers provide 512 px (HiDPI/retina) tiles,
-						often via an @2x suffix in the URL.
+						Minimum zoom level requested from the single-source
+						map.location. Ignored when map.xyz.sources is set (each
+						source carries its own band).
+						</description>
+					</parameter>
+					<parameter name="maxLevel" type="uint" default="19" range="0:29">
+						<description>
+						Maximum zoom level requested from the single-source
+						map.location. Ignored when map.xyz.sources is set.
+
+						Provider maxima differ: OpenStreetMap standard caps at 19;
+						third-party OSM (MapTiler, Thunderforest) reach 20-22;
+						Google ~21-22; ESRI ArcGIS up to 23. Requesting beyond a
+						server's maximum returns 404 (now negative-cached, see
+						missingTTL). The hard ceiling is 29 (SeisComP TileIndex).
+						</description>
+					</parameter>
+					<parameter name="missingTTL" type="int" default="300" unit="s">
+						<description>
+						How long (in seconds) to remember that a tile returned an
+						HTTP error (e.g. 404 above a server's max zoom) before
+						trying it again. Prevents re-requesting absent tiles on
+						every redraw.
+						  300 = 5 minutes (default)
+						  -1  = remember for the whole session
+						   0  = disable negative caching (always retry)
+						</description>
+					</parameter>
+					<parameter name="tileSize" type="string" default="256" unit="px"
+					           values="256,512">
+						<description>
+						Edge length of square tiles in pixels. Must match what the
+						server actually serves, because SeisComP derives the zoom
+						level from the tile size — a mismatch renders blurry.
+						  256 = standard XYZ tiles (default)
+						  512 = HiDPI/retina tiles, often via an @2x suffix or a
+						        "@2x" / "512" variant in the URL template
+						If unsure, leave at 256; on first fetch the plugin logs a
+						warning if the served tile size differs from this setting.
 						</description>
 					</parameter>
 					<parameter name="cacheDir" type="directory">

@@ -24,6 +24,7 @@
 #include <QSize>
 #include <QString>
 #include <QStringList>
+#include <QVector>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -50,19 +51,37 @@ private slots:
 private:
 	using TileId = Seiscomp::Gui::Map::TileIndex::Storage;
 
+	//! A tile source serving a contiguous zoom-level band. Each source
+	//! advertises its own maxLevel because providers differ: OSM standard
+	//! caps at 19, Google ~21-22, ESRI ArcGIS up to 23. The hard ceiling
+	//! is SeisComP's TileIndex::MaxLevel (29).
+	struct Source {
+		int     minLevel{0};
+		int     maxLevel{19};
+		QString url;
+	};
+
+	const Source *sourceForLevel(int level) const;
+
 	QString buildURL(const Seiscomp::Gui::Map::TileIndex &tile);
 	QString cachePath(const Seiscomp::Gui::Map::TileIndex &tile) const;
 	bool    isCacheFresh(const QString &path) const;
 	void    startRequest(const Seiscomp::Gui::Map::TileIndex &tile);
 
 	QNetworkAccessManager          *_nam{nullptr};
-	QString                         _urlTemplate;
+	QVector<Source>                 _sources;
 	QStringList                     _subdomains;
 	int                             _subdomainIndex{0};
-	int                             _maxLevel{18};
+	int                             _minLevel{0};
+	int                             _maxLevel{19};
 	QString                         _cacheDir;
 	int                             _cacheDuration{86400};
 	QString                         _userAgent;
+
+	int                             _missingTTL{300};
+	QHash<TileId, qint64>           _missing;
+
+	bool                            _tileSizeChecked{false};
 
 	QHash<QNetworkReply *, TileId>  _replyMap;
 	QSet<TileId>                    _inflight;

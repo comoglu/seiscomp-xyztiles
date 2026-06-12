@@ -66,12 +66,36 @@ map.location = https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
+| `map.xyz.sources` | *(empty)* | Optional list of `minLevel:maxLevel:url` entries — one basemap per zoom band (overrides `map.location`) |
 | `map.xyz.subdomains` | `a,b,c` | Comma-separated subdomain list for `{s}` rotation |
-| `map.xyz.maxLevel` | `18` | Maximum zoom level |
-| `map.xyz.tileSize` | `256` | Tile edge length in pixels |
+| `map.xyz.minLevel` | `0` | Minimum zoom level (single-source mode) |
+| `map.xyz.maxLevel` | `19` | Maximum zoom level (single-source mode) |
+| `map.xyz.tileSize` | `256` | Tile edge length in px — `256` (standard) or `512` (HiDPI/retina). Must match the server's actual tiles |
 | `map.xyz.cacheDir` | *(empty)* | Directory for on-disk tile cache |
 | `map.xyz.cacheDuration` | `86400` | Cache TTL in seconds (`-1` = forever, `0` = disabled) |
+| `map.xyz.missingTTL` | `300` | Seconds to remember a failed (e.g. 404) tile before retrying (`-1` = session, `0` = always retry) |
 | `map.xyz.userAgent` | `SeisComP-xyztiles/1.0` | HTTP User-Agent header |
+
+> **Max zoom per provider:** OSM standard caps at **19**; third-party OSM
+> (MapTiler, Thunderforest) reach 20–22; Google ~21–22; ESRI ArcGIS up to 23.
+> Set `maxLevel` (or a source's band) to match your server. The hard ceiling is 29.
+
+### Different basemaps at different zoom levels
+
+Use `map.xyz.sources` to serve, say, a clean overview map when zoomed out and
+satellite imagery when zoomed in. Each entry is `minLevel:maxLevel:urlTemplate`
+(only the first two colons are separators, so `https://` is preserved):
+
+```ini
+plugins = xyztiles
+map.type = xyz
+
+map.xyz.sources = "0:9:https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", \
+                  "10:19:https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+```
+
+When `map.xyz.sources` is set it overrides `map.location`. The store's overall
+zoom range is the union of all bands.
 
 > **OSM policy:** If using OpenStreetMap tiles, set `map.xyz.userAgent` to
 > something identifying your institution —

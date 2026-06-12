@@ -1,8 +1,10 @@
 build/
+build_*/
 *.so
 *.o
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 install_manifest.txt
+CLAUDE.md
 *_autogen/
