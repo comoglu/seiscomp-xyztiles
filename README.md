@@ -103,6 +103,20 @@ zoom range is the union of all bands.
 
 ---
 
+## Notes
+
+- **Map looks sharp while dragging, softer once you release.** This is expected
+  SeisComP behaviour, not the plugin: while panning, the canvas renders tiles
+  with nearest-neighbour sampling (crisp); on release it switches to bilinear
+  filtering (smoother). To keep the released view crisp too, set
+  `scheme.map.bilinearFilter = false` — the trade-off is more aliasing on
+  coastlines and labels.
+- **`map.xyz.tileSize` is a `256`/`512` dropdown in scconfig.** It must match the
+  pixel size the server actually serves; on the first tile fetch the plugin logs
+  a warning if the served size differs, since a mismatch makes the map blurry.
+
+---
+
 ## License
 
 GNU Affero General Public License v3.0 — see [LICENSE](LICENSE).
